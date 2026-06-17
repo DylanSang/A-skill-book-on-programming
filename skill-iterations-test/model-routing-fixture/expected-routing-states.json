@@ -1,0 +1,29 @@
+{
+  "default_disabled": {
+    "task": "规划一个新的 OTA 容错功能并输出方案和 Todo",
+    "skill": "embedded-feature-planner",
+    "enabled": false,
+    "source": "default_off"
+  },
+  "explicit_enabled_embedded": {
+    "task": "排查 DTS 属性不生效和 compatible 匹配失败",
+    "skill": "embedded-feature-planner",
+    "enabled": true,
+    "required_functions": [
+      "task_routing",
+      "debug",
+      "role_synthesis",
+      "artifact_review"
+    ]
+  },
+  "explicit_enabled_prompt": {
+    "task": "帮我生成一个嵌入式驱动调试 prompt",
+    "skill": "expert-prompt-generator",
+    "enabled": true,
+    "required_functions": [
+      "task_routing",
+      "prompt_generation",
+      "artifact_review"
+    ]
+  }
+}
