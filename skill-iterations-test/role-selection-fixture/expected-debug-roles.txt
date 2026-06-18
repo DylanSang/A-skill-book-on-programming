@@ -1,8 +1,0 @@
-system_architect
-test_engineer
-project_manager
-bsp_engineer
-driver_engineer
-system_engineer
-devops_engineer
-application_engineer
