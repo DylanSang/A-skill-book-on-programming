@@ -1,66 +1,182 @@
-# Project-Ready AI Workflow Pack
+# AI Workflow Pack for Real Projects
 
-把 `.claude` 和 `.agents` 直接放进你的工程目录，让 `Claude Code`、`Codex`、`Cursor` 不再“自由发挥”，而是按一套可路由、可校验、可交接的稳定工作流真正干活。
+> 把 `.claude` 和 `.agents` 扔进工程目录，让 `Claude Code`、`Codex`、`Cursor` 从“会聊天”升级成“会按流程交付”。
 
-这不是一堆提示词模板。
-这是一套已经被拆成 canonical workflow、role system、task packet、validation chain 的项目内 AI 工作流骨架。
+![Workflow](https://img.shields.io/badge/workflow-canonical-blue)
+![Routing](https://img.shields.io/badge/routing-minimal%20roles-green)
+![Validation](https://img.shields.io/badge/validation-built--in-success)
+![Model Routing](https://img.shields.io/badge/model%20routing-default%20off-orange)
+![Project Use](https://img.shields.io/badge/usage-project%20ready-black)
 
-## 为什么这套东西会让人上头
+## TL;DR
 
-- 不靠运气问 AI，而是先走主流程，再出产物
-- 不默认全量加载角色，而是先选最少必要角色
-- 不让模型路由偷偷生效，而是默认关闭、显式启用
-- 不只会“给建议”，还能产出 `task-packet.json`、`方案.md`、`Todo.md`、`debug.json`、`describe_prompt.md`
-- 不只写文档，还自带校验器、fixture 和状态索引
+这不是一个 prompt 收藏夹。
 
-如果你也受够了：
+这是一套能直接放进真实工程目录、并驱动 `Claude Code` / `Codex` / `Cursor` 按统一流程工作的 AI workflow pack：
 
-- AI 一会儿像架构师，一会儿像瞎猜机器
-- 每个会话都要重新解释项目规范
-- 做了半天没有中间契约，也没有交接材料
-- prompt 很长，但没有稳定结果
+- 先读入口规则，而不是先自由发挥
+- 先路由任务，而不是先读完所有角色
+- 先生成 `task-packet.json`，而不是直接散文式输出
+- 先形成 `方案.md` / `Todo.md` / `debug.json` / `describe_prompt.md`
+- 最后跑校验，而不是“差不多就行”
 
-这套仓库就是为这些问题准备的。
+如果你想要的不是“一个会聊天的 AI”，而是“一个能在工程目录里稳定推进任务的 AI 工作流底座”，这套仓库就是现成答案。
 
-## 你会得到什么
+## Why People Star This Kind of Repo
 
-仓库核心分成三层：
+因为多数 AI 工程协作最后都会翻车在同一组问题上：
 
-- `.claude`
-  - 真正的 canonical workflow、references、rules、scripts、模板
-- `.agents`
-  - skill wrapper 与 UI metadata，让工具更容易触发正确入口
-- `skill-iterations-test`
-  - fixture、验证样例、状态索引、阶段性报告
+- AI 很聪明，但每次都不一样
+- 新会话一开，又要重新讲项目规范
+- 角色很多，但没有交接契约
+- 产出很多，但没有校验闭环
+- 模型切换很酷，但复杂度很快失控
 
-当前已经稳定的两个核心能力：
+这个仓库的价值，不在于“让 AI 说得更像专家”。
+而在于它把 AI 使用方式从：
 
-1. `embedded-feature-planner`
-   用于嵌入式规划、工程接入、Bug 修复、编译失败、运行异常排查
-2. `expert-prompt-generator`
-   用于高质量 prompt 生成、角色设计、提示词优化、`describe_prompt.md` 维护
+**问答**
 
-## 它和普通 prompt 仓库的区别
+变成：
 
-普通 prompt 仓库通常只有：
+**项目内工作流**
 
-- 一些长提示词
-- 一些角色模板
-- 一些“建议”
+## Before / After
 
-这套仓库已经进化成更像工作流引擎的结构：
+### Before
 
-- 有 canonical 主流程
-- 有按需加载的 references
-- 有最少必要角色路由
-- 有 task packet 中间契约
-- 有默认关闭的模型路由
-- 有 wrapper 漂移校验
-- 有最近一次产物摘要索引
+- “帮我分析这个问题”
+- AI 开始即兴发挥
+- 回答看起来很聪明
+- 但没有中间契约、没有统一产物、没有自检
+- 下一个会话几乎要重来
 
-一句话说，它已经不是“让 AI 看起来更聪明”，而是“让 AI 更像一个能交付结果的项目成员”。
+### After
 
-## 最推荐的用法
+- 先读 `CLAUDE.md`
+- 再读 `.claude/.../AGENTS.md`
+- 先路由任务
+- 先生成 `task-packet.json`
+- 再生成 `方案.md` / `Todo.md` / `debug.json` / `describe_prompt.md`
+- 最后跑 validators
+
+最重要的变化只有一句：
+
+> 把“问 AI”升级成“驱动一个可重复、可交接、可验证的工程流程”。
+
+## What This Repo Actually Contains
+
+```text
+.
+├── .claude
+├── .agents
+├── skill-iterations-test
+├── CLAUDE.md
+├── 使用说明.md
+├── 使用示例.md
+└── 优化报告.md
+```
+
+### `.claude`
+
+真正的执行真源：
+
+- canonical workflow
+- references
+- rules
+- scripts
+- templates
+
+### `.agents`
+
+轻量 wrapper 层：
+
+- skill 触发入口
+- UI metadata
+- 默认 prompt
+
+### `skill-iterations-test`
+
+回归与状态层：
+
+- fixtures
+- validators
+- current state index
+- iteration reports
+
+## The Two Core Skills
+
+### `embedded-feature-planner`
+
+用于：
+
+- 新功能规划
+- 工程接入
+- bug 修复
+- 编译失败 / 链接失败
+- 运行异常排查
+- 输出 `方案.md` / `Todo.md` / `debug.json`
+
+### `expert-prompt-generator`
+
+用于：
+
+- prompt 生成
+- 角色设计
+- 提示词优化
+- 维护 `describe_prompt.md`
+- 把模糊需求压成高质量、可复用指令
+
+## What Makes It Feel Different
+
+很多仓库教你怎么“写更长的 prompt”。
+
+这个仓库做的是另一件更难、也更实用的事：
+
+### 1. Canonical First
+
+真正入口不是对话，而是：
+
+- `CLAUDE.md`
+- `.claude/embedded-feature-planner/AGENTS.md`
+- `.claude/expert-prompt-generator/AGENTS.md`
+
+### 2. Route First
+
+不是一上来就把所有角色塞进上下文，而是：
+
+1. 判断任务模式
+2. 判断任务场景
+3. 选择最少必要角色
+4. 执行对应 playbook
+
+### 3. Artifact First
+
+输出不是聊天记录，而是工程产物：
+
+- `task-packet.json`
+- `方案.md`
+- `Todo.md`
+- `debug.json`
+- `describe_prompt.md`
+- `role-summary.md`
+
+### 4. Validation First
+
+不是“写完就算”，而是“写完还要过检查”。
+
+### 5. Model Routing That Stays in Its Lane
+
+不是炫技式多模型，而是：
+
+- 默认关闭
+- 显式启用
+- 结构化记录
+- 错误配置不会偷偷生效
+
+这点非常适合真实项目。
+
+## 5-Minute Setup
 
 把下面这些内容直接放进你的真实工程根目录：
 
@@ -69,22 +185,22 @@ your-project/
 ├── .claude/
 ├── .agents/
 ├── CLAUDE.md
-├── src/ 或你的业务代码
-└── 其他工程目录
+├── src/ or your real code
+└── ...
 ```
 
-想保留完整导航和验证样例时，再加上：
+如果你还想带上完整导航和验证样例，再加：
 
 ```text
 优化报告.md
 skill-iterations-test/
 ```
 
-然后进入工程目录，直接开始用。
+然后就可以在项目根目录直接开工。
 
-## 真正的入口顺序
+## The Real Entry Order
 
-放进工程后，优先级是这样的：
+进入工程目录后，优先级如下：
 
 1. `CLAUDE.md`
 2. `.claude/embedded-feature-planner/AGENTS.md`
@@ -93,11 +209,11 @@ skill-iterations-test/
 5. `.claude/.../scripts/*`
 6. `.agents/skills/*/SKILL.md`
 
-核心原则只有一句：
+一句话：
 
-`.claude` 是执行真源，`.agents` 是轻量触发器。
+**`.claude` 是执行真源，`.agents` 是轻量触发器。**
 
-## 三种工具怎么直接开工
+## Copy-Paste Starters
 
 ### Claude Code
 
@@ -128,22 +244,35 @@ Generate task-packet.json first, then continue with the project artifacts.
 先生成 task-packet.json，再执行后续步骤。
 ```
 
-Prompt 任务也同理，把入口换成：
+Prompt 任务时，把入口替换成：
 
 - `.claude/expert-prompt-generator/AGENTS.md`
 - 输出追加到 `describe_prompt.md`
 
-## 最能打的几个能力
+## Workflow at a Glance
 
-### 1. 任务先路由，再执行
+```mermaid
+flowchart TD
+    A[User Task] --> B[CLAUDE.md]
+    B --> C[Canonical AGENTS.md]
+    C --> D[Route Task / Select Roles]
+    D --> E[Generate task-packet.json]
+    E --> F[Produce Artifacts]
+    F --> G[Run Validators]
+    G --> H[Handoff / Continue]
+```
 
-先用脚本判断这是：
+## Practical Highlights
+
+### Task Routing
+
+任务先被归类成：
 
 - `planning`
 - `implementation`
 - `debug`
 
-再把任务路由到具体场景，例如：
+再进一步路由到具体场景：
 
 - 新功能规划
 - 编译失败 / 链接失败
@@ -151,11 +280,15 @@ Prompt 任务也同理，把入口换成：
 - 运行时异常 / 服务不稳定
 - 发布阻塞 / 交付前收口
 
-### 2. 先生成 task packet，再让角色接棒
+### Minimal Role Loading
 
-`task-packet.json` 不是装饰文件，它是这套体系的中间契约。
+不会默认加载全部角色。
 
-它会明确：
+它会先选最少必要角色，再在必要时扩角色。
+
+### Task Packet as Contract
+
+`task-packet.json` 会明确：
 
 - mode
 - scenario
@@ -165,24 +298,22 @@ Prompt 任务也同理，把入口换成：
 - acceptance checks
 - handoff fields
 
-这让多角色协作、调试闭环、文档交接都开始变得可靠。
+这使得多角色协作、调试闭环和文档交接第一次变得“像工程流程”，而不是“像聊天历史”。
 
-### 3. 模型路由默认关闭
+### Recent State Snapshot
 
-很多项目一上来就搞“不同功能用不同模型”，最后变成复杂度爆炸。
+仓库自带状态索引，会汇总：
 
-这套体系默认反着来：
+- 当前能力快照
+- validators 状态
+- 最近一次产物摘要
+- workspace 根目录是否已有真实产物
 
-- 默认 `disabled`
-- 只有用户明确要求时才启用
-- 启用后必须结构化记录
-- 错误配置不会偷偷生效
+所以它不仅能跑，还能告诉你“现在跑到哪了”。
 
-所以它更适合实际项目，而不是 demo。
+## Built-In Validation
 
-### 4. 不只生成内容，还会自检
-
-仓库内已经带了验证链：
+仓库已经内置这些守门脚本：
 
 - `validate_skill_wrappers.py`
 - `validate_task_packet.py`
@@ -194,9 +325,15 @@ Prompt 任务也同理，把入口换成：
 - `validate_reference_links.py`
 - `validate_playbooks.py`
 
-它不是“写完就算”，而是“写完还要过检查”。
+还有：
 
-## 常用命令
+- wrapper 漂移检查
+- fixture 回归
+- current state index
+
+这意味着它不仅会“生成”，还会“自证”。
+
+## Useful Commands
 
 ### 看任务应该怎么走
 
@@ -228,17 +365,34 @@ python .claude/embedded_ai_roles/scripts/validate_task_packet.py --packet task-p
 python .claude/embedded_ai_roles/scripts/validate_model_routing_config.py --config ".claude/embedded_ai_roles/assets/model-routing-template.json"
 ```
 
-### 看当前状态快照
+### 检查当前状态快照
 
 ```bash
 python .claude/embedded_ai_roles/scripts/generate_current_state_index.py --check skill-iterations-test/current-state-index.md
 ```
 
-## 当前状态
+## Who This Is For
 
-已经稳定：
+适合：
 
-- canonical 主流程
+- 想把 AI 直接嵌进真实工程目录的人
+- 想让多种工具走同一套规范的人
+- 需要中间契约、文档交接和校验闭环的人
+- 嵌入式规划 / 修复 / 调试任务比较多的人
+- 不想让模型路由默认乱飞的人
+
+不太适合：
+
+- 只想要几个随手复制的 prompt
+- 不需要任何结构化产物
+- 不在乎 AI 每次都换一种做法
+- 不准备接受 workflow / validator 约束的人
+
+## Current State
+
+### Stable
+
+- canonical workflows
 - references 按需加载
 - 最少必要角色路由
 - task packet 生成与校验
@@ -247,15 +401,15 @@ python .claude/embedded_ai_roles/scripts/generate_current_state_index.py --check
 - wrapper 漂移校验
 - 最近一次产物摘要索引
 
-仍是占位：
+### Still Placeholder
 
-- 模型路由模板中的 `model_id`
+- 模型路由模板中的真实 `model_id`
 - 真实 Git 工程中的完整演练
 - 多次真实任务的连续历史索引
 
-## 从哪里开始看
+## Read This Next
 
-如果你想快速理解全貌，按这个顺序：
+如果你想快速掌握全貌，按这个顺序读：
 
 1. [使用说明.md](/E:/AI/skill%20V3/%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md:1)
 2. [使用示例.md](/E:/AI/skill%20V3/%E4%BD%BF%E7%94%A8%E7%A4%BA%E4%BE%8B.md:1)
@@ -263,6 +417,6 @@ python .claude/embedded_ai_roles/scripts/generate_current_state_index.py --check
 4. [CLAUDE.md](/E:/AI/skill%20V3/CLAUDE.md:1)
 5. [current-state-index.md](/E:/AI/skill%20V3/skill-iterations-test/current-state-index.md:1)
 
-## 最后一句
+## Final Take
 
 如果你想要的不是“一个会聊天的 AI”，而是“一个进了工程目录就知道先读什么、先产什么、怎么校验、怎么交接的 AI 工作流底座”，这套仓库就是现成答案。
