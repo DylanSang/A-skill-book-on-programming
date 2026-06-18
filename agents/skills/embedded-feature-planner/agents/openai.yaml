@@ -1,0 +1,7 @@
+interface:
+  display_name: "Embedded Feature Planner"
+  short_description: "规划嵌入式需求，默认关闭模型路由并先生成任务包"
+  default_prompt: "Use $embedded-feature-planner to analyze this embedded request, keep model routing disabled unless explicitly requested, generate a task packet, gather evidence from the repo, and produce or update the planning and debug artifacts."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Expert Prompt Generator"
+  short_description: "按需求生成高质量 Prompt 并沉淀到库中"
+  default_prompt: "Use $expert-prompt-generator to turn this request into a concise, expert-grade prompt and append it to describe_prompt.md."
+
+policy:
+  allow_implicit_invocation: true
