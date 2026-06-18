@@ -297,9 +297,22 @@
   - `优化报告.md`
 - 新增轻量索引：
   - `skill-iterations-test/current-state-index.md`
+- 新增状态索引生成脚本：
+  - `.claude/embedded_ai_roles/scripts/generate_current_state_index.py`
+- 新增 wrapper 漂移校验脚本：
+  - `.claude/embedded_ai_roles/scripts/validate_skill_wrappers.py`
+- 修正仓库级入口命令：
+  - `CLAUDE.md` 中的模型路由配置校验命令已对齐到真实存在的 `model-routing-template.json`
+- 扩展状态索引内容：
+  - 自动识别 workspace 根目录真实产物
+  - 缺失时回退到 fixture
+  - 摘要最近一次 planning / prompt / task-packet / role-summary 产物
 
 ### 新增价值
 
 - 把长对话和多轮迭代结果压缩成一份可快速阅读的总览
 - 给出 canonical 入口、核心脚本、fixture、验证器和下一步建议
+- 让状态索引从手工清单升级为可生成、可校验的快照
+- 把“wrapper 记得同步”从人工约定升级成可运行的守门检查
+- 让状态索引开始承载“最近一次产物摘要”，而不只是仓库健康状态
 - 后续继续优化时，先看 `优化报告.md` 就能快速进入状态

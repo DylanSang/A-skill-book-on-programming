@@ -549,9 +549,15 @@
 
 - 根目录：`优化报告.md`
 - 测试目录：`current-state-index.md`
+- 脚本入口：`.claude/embedded_ai_roles/scripts/generate_current_state_index.py`
+- wrapper 守门：`.claude/embedded_ai_roles/scripts/validate_skill_wrappers.py`
+- 产物摘要：状态索引现在会优先读取 workspace 根目录真实产物，缺失时回退到 fixture
 
 作用：
 
 1. 把当前 `.claude` 体系已经具备的能力压缩成一份总览
 2. 明确 canonical 入口、关键 references、脚本、fixture 和下一步建议
 3. 避免后续继续迭代时重新从对话历史里恢复上下文
+4. 让状态索引从手工维护升级为可脚本生成和校验
+5. 让 `.agents` wrapper 与 `.claude` canonical 的同步关系具备显式校验
+6. 让接手者可以直接看到最近一次产物快照，而不是只看到脚本列表
