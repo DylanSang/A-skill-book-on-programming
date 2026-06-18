@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "profile_name": "explicit-multi-model-routing-template",
+  "default_enabled": false,
+  "activation": "explicit_opt_in_required",
+  "functions": {
+    "task_routing": {
+      "model_id": "replace-with-fast-routing-model",
+      "reason": "用于快速分类、信号提取和轻量决策。",
+      "when_to_use": "任务分流、标签判断、最少必要角色建议。"
+    },
+    "planning": {
+      "model_id": "replace-with-deep-planning-model",
+      "reason": "用于复杂规划、方案对比和长链分析。",
+      "when_to_use": "方案设计、架构取舍、任务拆解。"
+    },
+    "implementation": {
+      "model_id": "replace-with-code-implementation-model",
+      "reason": "用于代码实现、改动建议和工程落地。",
+      "when_to_use": "编码、重构、接入实现。"
+    },
+    "debug": {
+      "model_id": "replace-with-debug-model",
+      "reason": "用于定位跨层问题、根因分析和修复闭环。",
+      "when_to_use": "编译失败、运行异常、驱动不生效。"
+    },
+    "role_synthesis": {
+      "model_id": "replace-with-synthesis-model",
+      "reason": "用于汇总多角色结论、提取一致意见和冲突点。",
+      "when_to_use": "角色汇总、结论压缩、交接说明。"
+    },
+    "artifact_review": {
+      "model_id": "replace-with-review-model",
+      "reason": "用于结构校验、风险审阅和交付前收口。",
+      "when_to_use": "方案审阅、Todo 审阅、发布检查。"
+    },
+    "prompt_generation": {
+      "model_id": "replace-with-prompt-generation-model",
+      "reason": "用于压缩需求、生成高质量指令和角色提示词。",
+      "when_to_use": "prompt 生成、角色设计、提示词优化。"
+    }
+  },
+  "scenario_overrides": {
+    "dts_or_driver_not_effective": {
+      "debug": {
+        "model_id": "replace-with-low-level-driver-debug-model",
+        "reason": "用于低层驱动、设备树和板级证据的集中分析。",
+        "when_to_use": "DTS、binding、parse、probe 相关问题。"
+      }
+    },
+    "release_blocker": {
+      "artifact_review": {
+        "model_id": "replace-with-release-review-model",
+        "reason": "用于发布阻断项、回归结论和交付证据收口。",
+        "when_to_use": "发布检查、交付收口、回滚准备确认。"
+      }
+    }
+  }
+}
