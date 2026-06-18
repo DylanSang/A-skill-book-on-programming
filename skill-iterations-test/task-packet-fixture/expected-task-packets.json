@@ -1,0 +1,63 @@
+{
+  "new_feature": {
+    "task": "规划一个新的 OTA 容错功能并输出方案和 Todo",
+    "mode": "planning",
+    "scenario": "new_feature_planning",
+    "model_routing_enabled": false,
+    "required_roles": [
+      "product_manager",
+      "system_architect",
+      "test_engineer",
+      "project_manager"
+    ]
+  },
+  "compile_failure": {
+    "task": "修复交叉编译失败和 undefined reference 问题",
+    "mode": "debug",
+    "scenario": "compile_or_link_failure",
+    "model_routing_enabled": false,
+    "required_roles": [
+      "system_engineer",
+      "application_engineer",
+      "devops_engineer",
+      "test_engineer"
+    ]
+  },
+  "dts_issue": {
+    "task": "排查 DTS 属性不生效和 compatible 匹配失败",
+    "mode": "debug",
+    "scenario": "dts_or_driver_not_effective",
+    "model_routing_enabled": false,
+    "required_roles": [
+      "hardware_engineer",
+      "bsp_engineer",
+      "driver_engineer",
+      "test_engineer"
+    ]
+  },
+  "runtime_issue": {
+    "task": "排查服务崩溃和 watchdog 重启问题",
+    "mode": "debug",
+    "scenario": "runtime_service_instability",
+    "model_routing_enabled": false,
+    "required_roles": [
+      "system_engineer",
+      "application_engineer",
+      "test_engineer",
+      "devops_engineer"
+    ]
+  },
+  "release_blocker": {
+    "task": "处理发布前回归不过和交付物不齐的问题",
+    "mode": "planning",
+    "scenario": "release_blocker",
+    "model_routing_enabled": false,
+    "required_roles": [
+      "project_manager",
+      "test_engineer",
+      "devops_engineer",
+      "system_architect",
+      "product_manager"
+    ]
+  }
+}

@@ -35,6 +35,30 @@ C:\Users\maitekai\Desktop\AI\embedded_ai_roles\embedded_ai_roles\embedded_ai_rol
 **新工程 → 执行流程 A**
 **已有工程 → 执行流程 B**
 
+### 步骤 0：意图识别（默认彻底修复）
+
+当用户输入包含以下任一意图时，**默认进入“全局彻底修复模式”**，不需要用户再额外说明“彻底”：
+
+- `修复bug` / `修复 bug`
+- `解决bug` / `解决 bug`
+- `解决问题` / `排查问题` / `处理报错`
+- `编译失败` / `链接失败` / `无法运行`
+
+进入该模式后，必须强制执行：
+
+1. `全局排查范围（6条）`
+2. `高频故障闭环模板（A~D）`
+3. `全局 Debug 最小验收（5条）`
+4. `门禁变更后强制自检`
+
+禁止行为：
+
+- 只修当前报错行后结束
+- 只加门禁不补实现
+- 只给建议不落地改代码/脚本/构建
+
+> 只有在用户明确要求“仅做临时绕过/仅定位不修复”时，才允许降级为非彻底模式，并必须在 `debug.json` 记录降级原因。
+
 ---
 
 ## 流程 A：新工程
@@ -226,6 +250,34 @@ safety-guard > code-generation > compilation > debug-workflow > module-handover
 
 当规则与其他指令冲突时，规则具有更高优先级，尤其是 `safety-guard` 在任何情况下不可绕过。
 
+### 生成代码相关角色职责（强化版，基于已发生 bug）
+
+> 以下职责在“开始实现”后默认生效。任何角色未履责导致的编译失败，必须立即回滚到对应职责清单逐项补齐。
+
+| 角色 | 代码生成阶段强制职责 | 对应已发生问题 |
+|------|----------------------|---------------|
+| **Application Engineer** | 1) 每个新增 `.c/.cpp/.h` 文件按“符号→头文件”映射显式 `#include`；2) 头文件若暴露平台类型（如 `speed_t`）必须自包含其定义头（如 `<termios.h>`）；3) 新增源码文件后同步校验是否已加入构建列表；4) C/C++ 代码提交前执行一次“最小可编译检查”；5) 若代码使用 `pthread_*`，在接口文档与实现注释中明确“需要 pthread 链接” | `speed_t has not been declared`、源文件漏进 CMake、pthread 链接失败 |
+| **Driver Engineer** | 1) 审核 POSIX 相关类型/接口头文件完整性；2) 对串口/IO 模块重点检查 `termios/select/unistd/fcntl` 头文件是否直接包含；3) 避免依赖“间接包含”；4) 对涉及线程/同步的驱动交互代码标注线程库依赖 | 串口头文件缺失、线程依赖遗漏 |
+| **System Engineer** | 1) 当项目存在 `.cpp` 或 `project(... CXX)`，在方案中显式声明“必须具备 C++ 交叉编译链”；2) 保证模块边界不引入隐式依赖（头文件可独立编译）；3) 审核 CMake 源清单与模块设计一致；4) 方案中显式声明链接依赖（如 `pthread/m/rt`） | CXX 配置遗漏、架构声明与工程不一致、链接库遗漏 |
+| **DevOps Engineer** | 1) bootstrap 必须在 cmake 前完成 `gcc/g++` 成对探测；2) toolchain 写入编译器绝对路径；3) 自动适配 `-9` 变体；4) 编译脚本强制 UTF-8 无 BOM + LF；5) 脚本失败时打印可执行修复命令；6) 每次改构建逻辑后清理并重建 `build_arm` 验证；7) 对 `pthread_*`/`clock_gettime` 等符号执行链接依赖检查并自动补齐 `target_link_libraries` | `/bin/bash^M`、`CMAKE_CXX_COMPILER not found`、`undefined reference to pthread_*` |
+| **Test Engineer** | 1) 增加“构建前门禁测试”：编码/换行/权限/JSON 合法性；2) 增加“编译链完整性测试”：`gcc/g++` 同时可用；3) 新增“头文件自包含检查”：公共头单独编译 smoke test；4) 新增“链接阶段 smoke test”：检查常见库符号（pthread/rt）可解析 | 环境伪故障反复出现、链接阶段故障漏检 |
+| **Project Manager** | 1) 维护 `debug.json.debug_log` 为唯一故障事实源；2) 每次 `pass` 级修复后，推动将经验反写到本 Skill；3) 禁止把报错日志粘贴在 JSON 外 | debug 记录方式不规范导致 JSON 失效 |
+
+#### 角色交付门禁（生成代码时必须满足）
+
+在“代码已生成，准备编译”时，按角色勾选：
+
+```
+[Application]  新增头文件可独立编译；平台类型对应头文件已显式包含
+[Driver]       串口/IO 模块 POSIX 头文件检查通过（termios/select/unistd/fcntl）
+[System]       若含 .cpp，方案与构建均声明 CXX 编译链
+[DevOps]       gcc/g++ 成对可用，toolchain 为绝对路径，脚本为 LF 无 BOM，链接库自动核对
+[Test]         构建前门禁脚本通过（编码+权限+JSON+编译器+链接符号）
+[PM]           debug.json 已追加本轮 issue/fix/result 且 JSON 可解析
+```
+
+任一项未通过：禁止进入 `cmake --build`。
+
 ---
 
 ## 操作脚本生成规范（强制）
@@ -256,6 +308,58 @@ safety-guard > code-generation > compilation > debug-workflow > module-handover
 - Windows 开发机上运行 → PowerShell
 - 先在 Windows 上触发编译、再 adb push 到板子 → 两份都生成
 
+### 环境与编码强制规则（新增，必须执行）
+
+> **目的**：避免再次出现 `bash: ... /bin/bash^M: bad interpreter` 这类由 CRLF/BOM 引起的环境伪故障。
+
+#### 1) 任何脚本执行前，先做环境预检（不可跳过）
+
+每次要运行 `scripts/*.sh` 前，必须先检查：
+
+- `shell`：目标系统是否为 Linux/bash（非 PowerShell）
+- `换行`：`.sh` 文件必须是 **LF**，禁止 CRLF
+- `编码`：必须 **UTF-8 无 BOM**
+- `权限`：Linux 侧脚本必须具备可执行权限（`chmod +x`）
+
+若任一检查失败：**立即修复后再执行脚本**，不得带错继续编译。
+
+#### 2) bootstrap 脚本必须内建“自检 + 失败即退出”
+
+`scripts/bootstrap_linux.sh` 顶部必须包含并保持以下行为：
+
+- `set -euo pipefail`
+- 对关键脚本/配置文件做 BOM + CRLF 检查
+- 发现 `EF BB BF` 或 `\r` 直接 `exit 1`，并打印明确报错
+- 输出“如何修复”的提示（例如：统一转为 UTF-8 无 BOM + LF）
+
+#### 3) Windows 写入策略（防止再次污染）
+
+在 Windows 生成 `.sh` 或 `CMakeLists.txt`/`.cmake` 时：
+
+- 必须显式使用 UTF-8 无 BOM 写入
+- 写入后强制将 `\r\n` 归一化为 `\n`
+- 禁止依赖编辑器默认编码/默认行尾
+
+#### 4) debug.json 记录规则（强制）
+
+出现环境类错误（编码/换行/权限/解释器）时：
+
+- 必须追加到 `debug.json.debug_log`
+- 必须使用合法 JSON 条目，不得在 JSON 文件尾写 `//` 注释
+- 条目包含：`timestamp/module/issue/fix/result`
+
+#### 5) 执行门禁（Gate）
+
+在 `/embedded-feature-planner` 执行“开始实现”后，**第一条执行命令前**必须满足：
+
+```
+□ scripts/*.sh 已确认为 UTF-8 无 BOM + LF
+□ bootstrap_linux.sh 可执行
+□ debug.json 为合法 JSON（可被解析）
+```
+
+不满足任一项时，先修复门禁项，再进入编译/联调流程。
+
 ---
 
 ## 代码兼容性硬约束（强制）
@@ -270,6 +374,9 @@ safety-guard > code-generation > compilation > debug-workflow > module-handover
 | 严格警告零容忍（unused-result / format-truncation / stringop-truncation） | **System Engineer** | 同上 |
 | FORTIFY_SOURCE 友好写法（snprintf 用 `%.Ns`、不用 strncpy 截断） | **System Engineer** | 同上 |
 | 工具链版本下界（C11 / C++11 / CMake 3.12 / Python 3.6 / Bash 4.x / GNU sed） | **DevOps Engineer** | 同上 + `rv1126-compilation.mdc` |
+| 交叉编译器完整性（`gcc/g++` 必须成对可用，支持 `-v` 正常输出） | **DevOps Engineer** | `rv1126-compilation.mdc` |
+| C/C++ 编译器路径确定性（优先绝对路径，禁止仅写裸编译器名） | **DevOps Engineer** | `rv1126-compilation.mdc` |
+| C++ 入口可用性（项目含 `.cpp` 时必须先验证 `CMAKE_CXX_COMPILER`） | **System Engineer + DevOps Engineer** | `rv1126-compilation.mdc` |
 | Python 辅助脚本兼容（禁 `Path.write_text(newline=)` 等 3.10+ API） | **DevOps Engineer** | 同上 |
 | 跨平台编码（无 BOM + LF） | **DevOps Engineer** | `rv1126-code-generation.mdc §跨平台文件编码` |
 
@@ -288,6 +395,72 @@ safety-guard > code-generation > compilation > debug-workflow > module-handover
 ```
 
 **Agent 在写完每个源文件后必须按此清单回扫一遍，再交付。**
+
+### 编译器故障强制规则（新增）
+
+> **目标**：避免再次出现 `CMAKE_CXX_COMPILER not found` / `CXX compiler identification is unknown` 这类编译器配置故障。
+
+#### 角色分工（编译器专项）
+
+| 场景 | 主责角色 | 强制动作 |
+|------|---------|---------|
+| `project(... CXX)` 或存在 `.cpp` 文件 | **System Engineer** | 在方案阶段显式声明“需要 C++ 交叉编译器”，不得仅写 C 编译链 |
+| 生成 `toolchain-*.cmake` | **DevOps Engineer** | 写入 `CMAKE_C_COMPILER` 与 `CMAKE_CXX_COMPILER`，优先绝对路径 |
+| 执行 bootstrap 前 | **DevOps Engineer** | 先探测 `arm-linux-gnueabihf-gcc` 与 `arm-linux-gnueabihf-g++`（含 `-9` 变体） |
+| CMake 首次配置失败 | **DevOps Engineer** | 立即解析报错并回写 toolchain，不允许“让用户手动补命令”后中断流程 |
+
+#### 编译前门禁（新增，必须全部通过）
+
+在 `cmake -DCMAKE_TOOLCHAIN_FILE=...` 之前，必须先满足：
+
+```
+□ command -v arm-linux-gnueabihf-gcc 或 arm-linux-gnueabihf-gcc-9 成功
+□ command -v arm-linux-gnueabihf-g++ 或 arm-linux-gnueabihf-g++-9 成功
+□ toolchain-*.cmake 内 C/CXX 编译器为可执行绝对路径
+□ 当存在 .cpp 文件时，禁止仅配置 C 编译器
+```
+
+#### 故障闭环（强制）
+
+若出现以下关键字任一：
+
+- `CMAKE_CXX_COMPILER ... not found in the PATH`
+- `The CXX compiler identification is unknown`
+- `No CMAKE_CXX_COMPILER could be found`
+
+必须执行闭环：
+
+1. 在 bootstrap 内自动探测可用 `g++`/`g++-9`
+2. 重写 `toolchain-*.cmake` 为绝对路径
+3. 清理并重建 `build_arm/` 后重跑 cmake
+4. 将本次根因与修复追加到 `debug.json.debug_log`
+5. 若仍失败，给出单行可执行安装命令（例如 `sudo apt-get install g++-arm-linux-gnueabihf`）
+
+#### 链接阶段故障闭环（新增）
+
+若出现以下关键字任一：
+
+- `undefined reference to pthread_create/pthread_join`
+- `undefined reference to clock_gettime`
+- `ld returned 1 exit status`
+
+必须执行闭环：
+
+1. 从报错符号反查依赖库（`pthread_create -> pthread`，`clock_gettime -> rt`）
+2. 自动修正 `target_link_libraries(...)`（保持 Linux/Windows bootstrap 内嵌 CMake 同步）
+3. 清理并重建 `build_arm/` 后重编
+4. 将根因与修复追加到 `debug.json.debug_log`
+5. 在角色门禁中补充“链接符号检查”防止复发
+
+#### 禁止反模式（编译器）
+
+| 反模式 | 危害 | 替代方案 |
+|--------|------|---------|
+| 仅检查 `gcc`，不检查 `g++` | CMake 在 `project(... CXX)` 阶段必失败 | C/C++ 编译器成对预检 |
+| toolchain 写裸名 `arm-linux-gnueabihf-g++` | PATH 环境差异导致不可复现 | 写 `command -v` 解析出的绝对路径 |
+| 报 `CXX compiler unknown` 后继续 `cmake --build` | 流程无效、重复报错 | 先修 toolchain 再重配 |
+| 代码用了 `pthread_*` 但 CMake 未链接 `pthread` | 链接阶段失败 | 生成代码时同步声明并校验链接库 |
+| 把故障贴在 JSON 外部注释 | `debug.json` 失效 | 仅追加 `debug_log` 合法条目 |
 
 ---
 
@@ -367,9 +540,108 @@ safety-guard > code-generation > compilation > debug-workflow > module-handover
 
 ## 注意事项
 
+- 修复编译/链接问题时，**禁止只加门禁不补实现**；必须同时完成：
+  1) 根因定位（文件/符号级）  
+  2) 代码修复（函数/源文件/CMake 至少一项）  
+  3) 脚本门禁（防复发）  
+  4) 重新编译验证（通过后才标记 `pass`）
+- debug 时**禁止只盯当前文件**；必须执行“全局链路检查”（声明/定义/调用 + 构建 + 脚本 + 配置 + 文档）
+- 每轮“修复bug/解决问题”回复时，必须附带“全局修复执行清单（已做/待做）”，至少覆盖：符号链路、构建链路、脚本链路、配置链路、环境链路、文档链路、编译验证、debug.json 记录状态
 - 生成所有文档前，先向用户确认功能需求已理解正确
 - topStruct.md 分析耗时较长，生成前告知用户
 - 所有文档生成到**当前工作目录根目录**，不要创建子目录
 - debug.json 在后续调试中持续追加，不要覆盖已有条目
 - 每次方案中包含构建/部署/测试步骤时，**DevOps Engineer 角色必须同步产出 `scripts/` 目录下的对应脚本文件**
 - 每个 C/C++ 源文件生成后，**主责角色必须按"生成前自检清单"逐项确认**，再产出
+
+---
+
+## 全局 Debug 闭环（新增）
+
+> 用户要求“彻底修复”时，默认执行全局模式；禁止局部补丁后直接结束。
+
+### 全局排查范围（强制）
+
+1. **符号链路**：声明（`.h`）→ 定义（`.c/.cpp`）→ 调用点（caller）一致性
+2. **构建链路**：`CMakeLists.txt/Makefile/BUILD.gn` 源清单、链接库、编译选项
+3. **脚本链路**：`bootstrap_*.sh/.ps1` 是否会覆盖、回滚或误判修复
+4. **配置链路**：`config.h(.example)`、`common.h`、默认宏映射是否闭环
+5. **环境链路**：编码（LF/BOM）、权限、PATH、工具可用性（避免工具缺失误报）
+6. **文档链路**：`README/方案/Todo/debug.json` 是否同步最新行为
+
+### 全局 Debug 最小验收（强制）
+
+```
+□ 不仅修报错文件，还检查至少 1 个上游和 1 个下游文件
+□ 已验证构建系统确实纳入修复源文件
+□ 已验证 bootstrap 门禁不会误拦截
+□ 已执行完整构建验证（非仅静态检查）
+□ debug.json 记录根因、修复、验证结果
+```
+
+---
+
+## 高频故障闭环模板（新增）
+
+> 以下模板为强制执行模板，优先级高于“经验性建议”。
+
+### 模板 A：`debug.json` 被污染（JSON 外粘贴日志）
+
+触发信号：
+- `JSONDecodeError: Extra data`
+- 文件尾出现 `}` 之后还有终端输出
+
+必须动作：
+1. 删除 JSON 外所有文本
+2. 将终端现象转换为 `debug_log` 合法条目（`timestamp/module/issue/fix/result`）
+3. 执行 JSON 解析校验，未通过不得继续下一步
+
+### 模板 B：`undefined reference to ...`
+
+触发信号：
+- `ld returned 1 exit status`
+- `undefined reference to xxx`
+
+必须动作（缺一不可）：
+1. **实现层**：确认符号在某个 `.c/.cpp` 中有定义；无定义则补实现（可含 weak fallback）
+2. **构建层**：确认该源文件已在 `CMakeLists.txt/Makefile` 中
+3. **门禁层**：在 `bootstrap` 中增加“符号存在 + 源文件入构建”检查
+   - 若采用 fallback 方案，门禁必须使用 **OR 逻辑**：`主实现存在 OR fallback 存在`
+   - 禁止门禁只检查主实现文件，否则会误报并阻断可用构建
+4. **验证层**：清理构建目录并重编；通过后再写 `result: pass`
+
+### 模板 C：同一错误重复出现 ≥2 次
+
+必须动作：
+1. 给出“一次性修复”方案（代码 + 脚本 + 文档三处同步）
+2. 禁止仅追加临时脚本（`fix_xxx.sh`）  
+3. 必须在 `debug_log` 记录“复发根因”与“防复发措施”
+
+### 模板 D：门禁规则与实现策略冲突
+
+触发信号：
+- 门禁报错，但代码实际可链接（例如已存在 weak fallback）
+- 新增门禁后出现“误拦截”而非真实编译错误
+
+必须动作：
+1. 复盘实现策略（主实现、fallback、弱符号覆盖关系）
+2. 将门禁条件改为与实现一致的逻辑（AND/OR 明确化）
+3. 对门禁规则执行“正反用例自检”：
+   - 用例1：主实现存在，fallback 存在（应通过）
+   - 用例2：主实现缺失，fallback 存在（应通过）
+   - 用例3：主实现缺失，fallback 缺失（应失败）
+4. 将本次“规则冲突根因 + 修复逻辑”写入 `debug_log`
+
+---
+
+## 门禁变更后强制自检（新增）
+
+每次修改 `bootstrap_*.sh` 的门禁逻辑后，必须在交付前完成：
+
+```
+□ 门禁条件与当前实现策略一致（主实现 / fallback）
+□ 不会误拦截已可用构建（至少 1 个正向样例）
+□ 能拦截真实缺陷（至少 1 个反向样例）
+□ 对应 CMakeLists/Makefile 与门禁检查项同步
+□ debug.json 记录本次门禁变更与验证结果
+```
